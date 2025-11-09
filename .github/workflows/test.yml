@@ -19,11 +19,11 @@ jobs:
           - name: lts_63
             python-version: '3.11'
             wagtail-version: '~=6.3.0'
-            django-version: '~=4.2'
+            django-version: '~=4.2.0'
           - name: lts_70
             python-version: '3.13'
             wagtail-version: '~=7.0.0'
-            django-version: '~=5.2'
+            django-version: '~=5.2.0'
     
     name: Test ${{ matrix.name }}
     

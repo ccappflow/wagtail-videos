@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 ]
 
-if VERSION >= (7, 0):
+if VERSION >= (7, 2):
     INSTALLED_APPS.append("modelsearch")
 
 SECRET_KEY = "not a secret"
