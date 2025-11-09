@@ -10,7 +10,7 @@ from wagtail.admin.filters import BaseMediaFilterSet
 from wagtail.admin.views import generic
 from wagtail.search.backends import get_search_backends
 
-from wagtailvideos import (get_transcoder_backend, get_video_model)
+from wagtailvideos import get_transcoder_backend, get_video_model
 from wagtailvideos.forms import VideoTranscodeAdminForm, get_video_form
 from wagtailvideos.permissions import permission_policy
 

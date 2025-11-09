@@ -22,31 +22,31 @@ Video = get_video_model()
 
 class TracksAdminViewset(ModelViewSet):
     model = Video.get_track_listing_model()
-    icon = 'openquote'
-    menu_label = _('Text tracks')
-    url_prefix = 'videos/tracks'
+    icon = "openquote"
+    menu_label = _("Text tracks")
+    url_prefix = "videos/tracks"
 
-    list_display = ('__str__', 'track_count')
+    list_display = ("__str__", "track_count")
 
-    panels = [
-        VideoChooserPanel('video'),
-        InlinePanel('tracks', heading="Tracks")
-    ]
+    panels = [VideoChooserPanel("video"), InlinePanel("tracks", heading="Tracks")]
+
 
 tracks_viewset = TracksAdminViewset("wagtailvideos_tracks")
+
 
 @hooks.register("register_admin_viewset")
 def register_tracklist_viewset():
     return tracks_viewset
 
-@hooks.register('register_admin_urls')
+
+@hooks.register("register_admin_urls")
 def register_admin_urls():
     return [
-        path('videos/', include(urls)),
+        path("videos/", include(urls)),
     ]
 
 
-@hooks.register('register_group_permission_panel')
+@hooks.register("register_group_permission_panel")
 def register_video_permissions_panel():
     return GroupVideoPermissionFormSet
 
@@ -61,17 +61,21 @@ class VideoMenu(Menu):
     @property
     def registered_menu_items(self):
         return [
-            MenuItem(_('Manage videos'), reverse('wagtailvideos:index'),
-                     name='videos', icon_name='media', order=100),
+            MenuItem(
+                _("Manage videos"),
+                reverse("wagtailvideos:index"),
+                name="videos",
+                icon_name="media",
+                order=100,
+            ),
             tracks_viewset.get_menu_item(),
         ]
 
 
-@hooks.register('register_admin_menu_item')
+@hooks.register("register_admin_menu_item")
 def register_images_menu_item():
     return SubmenuMenuItem(
-        _('Videos'), VideoMenu(),
-        name='videos', icon_name='media', order=300
+        _("Videos"), VideoMenu(), name="videos", icon_name="media", order=300
     )
 
 
@@ -113,9 +117,12 @@ def register_media_search_area():
     )
 
 
-@hooks.register('insert_global_admin_css')
+@hooks.register("insert_global_admin_css")
 def summary_css():
-    return format_html('<link rel="stylesheet" href="{}">', static('wagtailvideos/css/summary-override.css'))
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("wagtailvideos/css/summary-override.css"),
+    )
 
 
 @hooks.register("register_admin_viewset")
