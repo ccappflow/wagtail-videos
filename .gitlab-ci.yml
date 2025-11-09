@@ -23,6 +23,14 @@ lts_63:
   before_script:
     - pip install . wagtail~=6.3 django~=4.2
 
+
+lts_70:
+  image: python:3.13
+  extends: .python_test
+  before_script:
+    - pip install . wagtail~=7.0 django~=5.2
+
+
 flake8:
   stage: lint
   image: python:3.11
