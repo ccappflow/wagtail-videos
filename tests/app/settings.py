@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import os
 
+from wagtail import VERSION
+
 INSTALLED_APPS = [
     "wagtailvideos",
     "tests.app",
@@ -21,6 +23,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
 ]
+
+if VERSION >= (7, 0):
+    INSTALLED_APPS.append("modelsearch")
 
 SECRET_KEY = "not a secret"
 
