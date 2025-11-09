@@ -5,7 +5,10 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.staticfiles import versioned_static
 from wagtail.admin.widgets import BaseChooser, BaseChooserAdapter
-from wagtail.telepath import register
+try:
+    from wagtail.admin.telepath import register
+except ImportError:
+    from wagtail.telepath import register
 
 from wagtailvideos import get_video_model
 
