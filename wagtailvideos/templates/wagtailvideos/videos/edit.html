@@ -20,11 +20,15 @@
             <ul class="fields">
                 {% for field in form %}
                   {% if field.name == 'file' %}
-                    {% include "wagtailvideos/videos/_file_field_as_li.html"  with li_classes="label-above label-uppercase" %}
+                    {% rawformattedfield field=field %}
+                        <a href="{{ video.url }}">{% icon name="media" classname="default" %} {{ video.filename }}</a>({{ video.file.size|filesizeformat }})<br/><br/>
+                        {% trans "Change video file:" %}
+                            {{ field }}
+                        {% endrawformattedfield %}
                   {% elif field.is_hidden %}
                     {{ field }}
                   {% else %}
-                    <li>{% include "wagtailadmin/shared/field.html" with li_classes="label-above label-uppercase" %}</li>
+                    {% formattedfield field=field %}
                   {% endif %}
                 {% endfor %}
                 <li>
