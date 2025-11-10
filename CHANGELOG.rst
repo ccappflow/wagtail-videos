@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+7.1.0
+-----
+
+- Removed modeladmin requirement for text tracks (@tognee)
+- Switched to github actions for CI
+- Fix inputs in edit.html to use formattedfield template tag
+
+
 7.0.2
 -----
 

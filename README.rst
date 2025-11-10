@@ -7,12 +7,13 @@ wagtailvideos
 
 Based on wagtailimages. The aim was to have feature parity with images
 but for html5 videos. Includes the ability to transcode videos to a
-html5 compliant codec using ffmpeg.
+html5 compliant codec using ffmpeg and also the ability to add and manage VTT text
+tracks for subtitles/captions.
 
 Requirements
 ------------
 
--  Wagtail >= 6.1 (for older wagtail version see the tags)
+-  Wagtail >= 6.3 (for older wagtail version see the tags)
 -  `ffmpeg <https://ffmpeg.org/>`__ (optional, for transcoding)
 
 Installing
@@ -178,7 +179,6 @@ Same as Wagtail Images, a custom model can be used to replace the built in Video
                 ('video', 'media_format')
             )
 
-    # Only needed if you are using the text tracks feature
     class CustomTrackListing(AbstractTrackListing):
         video = models.OneToOneField(AttributedVideo, related_name='track_listing', on_delete=models.CASCADE)
 
@@ -186,11 +186,6 @@ Same as Wagtail Images, a custom model can be used to replace the built in Video
         listing = ParentalKey(CustomTrackListing, related_name='tracks', on_delete=models.CASCADE)
 
 
-Video text tracks:
-~~~~~~~~~~~~~~~~~~
-
-To enable the uploading and displaying of VTT tracks (e.g. subtitles, captions) you'll need to add ``wagtail_modeladmin`` to your installed apps.
-Once added, there will be an new area in the admin for attaching VTT files to videos with associaled metadata.
 
 Future features
 ---------------
@@ -198,4 +193,3 @@ Future features
 -  Some docs
 -  Richtext embed
 -  Transcoding via external service rather than ffmpeg
--  Remove wagtail-modeladmin dependency
