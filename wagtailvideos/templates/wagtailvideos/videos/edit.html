@@ -21,7 +21,11 @@
                 {% for field in form %}
                   {% if field.name == 'file' %}
                     {% rawformattedfield field=field %}
-                        <a href="{{ video.url }}">{% icon name="media" classname="default" %} {{ video.filename }}</a>({{ video.file.size|filesizeformat }})<br/><br/>
+                        <a href="{{ video.url }}">{% icon name="media" classname="default" %} {{ video.filename }}</a>
+                        {% if filesize %}
+                        ({{ filesize|filesizeformat }})
+                        {% endif %}
+                        <br/><br/>
                         {% trans "Change video file:" %}
                             {{ field }}
                         {% endrawformattedfield %}
