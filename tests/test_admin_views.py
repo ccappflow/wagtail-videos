@@ -11,7 +11,8 @@ from wagtail.models import Collection, GroupCollectionPermission
 from wagtail.test.utils import WagtailTestUtils
 
 from tests.utils import create_test_video_file
-from wagtailvideos.models import Video
+from wagtailvideos.enums import MediaFormats
+from wagtailvideos.models import Video, VideoTranscode
 
 
 class TestVideoIndexView(WagtailTestUtils, TestCase):
@@ -698,3 +699,38 @@ class TestMultipleVideoUploader(TestCase, WagtailTestUtils):
         self.assertIn("success", response_json)
         self.assertEqual(response_json["video_id"], self.video.id)
         self.assertTrue(response_json["success"])
+
+@override_settings(WAGTAILVIDEOS_VIDEO_MODEL="wagtailvideos.Video")
+class TestDeleteTranscode(TestCase, WagtailTestUtils):
+    def setUp(self):
+        self.login()
+
+        # Create a video to edit
+        self.video = Video.objects.create(
+            title="Test video",
+            file=create_test_video_file()
+        )
+
+        # Create a transcode to delete
+        self.video.transcodes.create(
+            media_format=MediaFormats.MP4,
+            file=create_test_video_file()
+        )
+
+    def get(self, transcode_id, params={}):
+        return self.client.get(
+            reverse("wagtailvideos:delete_transcode", args=(self.video.id, transcode_id)),
+            params
+        )
+
+    def test_delete(self):
+        transcode = self.video.transcodes.first()
+        self.assertIsNotNone(transcode)
+
+        response = self.get(transcode.id)
+
+        # Should redirect back to edit view
+        self.assertRedirects(response, reverse("wagtailvideos:edit", args=(self.video.id,)))
+
+        # Should delete the transcode
+        self.assertFalse(VideoTranscode.objects.filter(id=transcode.id).exists())

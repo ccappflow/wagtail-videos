@@ -84,6 +84,10 @@
                         {% endblocktrans %}
                     {% if transcode.file %}
                         </a>
+                        <span>-</span>
+                        <a href="{% url 'wagtailvideos:delete_transcode' video.id transcode.id %}">
+                            {% trans "delete" %}
+                        </a>
                     {% endif %}
                     {% if transcode.processing %}
                         <span class="processing">{% trans "(Processing... hold tight)" %} </span>
