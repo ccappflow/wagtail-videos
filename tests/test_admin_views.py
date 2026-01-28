@@ -700,6 +700,7 @@ class TestMultipleVideoUploader(TestCase, WagtailTestUtils):
         self.assertEqual(response_json["video_id"], self.video.id)
         self.assertTrue(response_json["success"])
 
+
 @override_settings(WAGTAILVIDEOS_VIDEO_MODEL="wagtailvideos.Video")
 class TestDeleteTranscode(TestCase, WagtailTestUtils):
     def setUp(self):
