@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.2.0
+-----
+
+- Added ability to delete transcodes from the admin interface (@st3iny)
+
 7.1.0
 -----
 
