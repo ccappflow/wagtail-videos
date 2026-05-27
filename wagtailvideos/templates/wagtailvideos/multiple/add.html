@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load i18n static wagtailadmin_tags %}
+{% load i18n static wagtailadmin_tags wagtailcore_tags %}
 {% block titletag %}{% trans "Add multiple videos" %}{% endblock %}
 {% block extra_css %}
     {{ block.super }}
@@ -66,13 +66,16 @@
     {{ block.super }}
     {{ form_media.js }}
     <!-- this exact order of plugins is vital -->
-    <script src="{% versioned_static 'wagtailimages/js/vendor/load-image.min.js' %}"></script>
     <script src="{% versioned_static 'wagtailadmin/js/vendor/jquery.iframe-transport.js' %}"></script>
     <script src="{% versioned_static 'wagtailadmin/js/vendor/jquery.fileupload.js' %}"></script>
     <script src="{% versioned_static 'wagtailadmin/js/vendor/jquery.fileupload-process.js' %}"></script>
-    <script src="{% versioned_static 'wagtailimages/js/vendor/jquery.fileupload-image.js' %}"></script>
-    <script src="{% versioned_static 'wagtailimages/js/vendor/jquery.fileupload-validate.js' %}"></script>
-    <script src="{% versioned_static 'wagtailadmin/js/vendor/tag-it.js' %}"></script>
+    {% wagtail_version as current_version %}
+    <!-- See issue #144, can remove once wt lower bound is 7.4.1+. This check is brittle, but simple -->
+    {% if current_version >= '7.4.1' %}
+         <script src="{% versioned_static 'wagtailadmin/js/vendor/jquery.fileupload-validate.js' %}"></script>
+    {% else %}
+         <script src="{% versioned_static 'wagtailimages/js/vendor/jquery.fileupload-validate.js' %}"></script>
+    {% endif %}
 
     <!-- Main script -->
     <script src="{% static 'wagtailvideos/js/add-multiple.js' %}"></script>
