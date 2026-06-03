@@ -11,7 +11,6 @@ from wagtail.admin.views.generic.chooser import (
 from wagtail.admin.viewsets.chooser import ChooserViewSet
 
 from wagtailvideos import get_video_model
-from wagtailvideos.chunked_uploads import handle_chunked_upload
 from wagtailvideos.forms import get_video_form
 from wagtailvideos.permissions import permission_policy
 
@@ -52,9 +51,12 @@ class BaseVideoChooseView(BaseChooseView):
     ordering = "-created_at"
 
     def get_object_list(self):
-        return permission_policy.instances_user_has_any_permission_for(
-            self.request.user, ["choose"]
-        ).select_related("collection")
+        return (
+            permission_policy.instances_user_has_any_permission_for(
+                self.request.user, ["choose"]
+            )
+            .select_related("collection")
+        )
 
     def filter_object_list(self, objects):
         tag_name = self.request.GET.get("tag")
@@ -127,24 +129,16 @@ class VideoUploadViewMixin(CreateViewMixin):
 
     def post(self, request):
         self.model = get_video_model()
-        chunk_result = handle_chunked_upload(request, field_name="file")
-        if chunk_result.response:
-            return chunk_result.response
+        self.form = self.get_creation_form()
 
-        try:
-            self.form = self.get_creation_form()
+        if self.form.is_valid():
+            image = self.save_form(self.form)
 
-            if self.form.is_valid():
-                image = self.save_form(self.form)
+            # not specifying a format; return the image details now
+            return self.get_chosen_response(image)
 
-                # not specifying a format; return the image details now
-                return self.get_chosen_response(image)
-
-            else:  # form is invalid
-                return self.get_reshow_creation_form_response()
-        finally:
-            if chunk_result.cleanup:
-                chunk_result.cleanup()
+        else:  # form is invalid
+            return self.get_reshow_creation_form_response()
 
 
 class VideoUploadView(
