@@ -100,7 +100,9 @@ def handle_chunked_upload(request, field_name):
         )
 
     # Enforce the same upper bound as the normal upload field to avoid disk DoS
-    max_upload_size = getattr(settings, "WAGTAILVIDEOS_MAX_UPLOAD_SIZE", 1024 * 1024 * 1024)
+    max_upload_size = getattr(
+        settings, "WAGTAILVIDEOS_MAX_UPLOAD_SIZE", 1024 * 1024 * 1024
+    )
     if max_upload_size is not None and total > max_upload_size:
         return ChunkedUploadResult(
             response=JsonResponse(
@@ -146,6 +148,7 @@ def handle_chunked_upload(request, field_name):
                     "chunked_upload": True,
                     "complete": False,
                     "uploaded_bytes": end + 1,
+                    "success": True,
                 }
             )
         )
