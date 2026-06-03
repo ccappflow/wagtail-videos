@@ -1,4 +1,12 @@
 $(function() {
+    function createUploadId() {
+        if (window.crypto && window.crypto.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+
+        return 'upload-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+
     // prevents browser default drag/drop
     $(document).bind('drop dragover', function(e) {
         e.preventDefault();
@@ -7,6 +15,7 @@ $(function() {
     $('#fileupload').fileupload({
         dataType: 'html',
         sequentialUploads: true,
+        maxChunkSize: window.fileupload_opts.chunk_size,
         dropZone: $('.drop-zone'),
         acceptFileTypes: window.fileupload_opts.accepted_file_types,
         maxFileSize: window.fileupload_opts.max_file_size,
@@ -22,6 +31,9 @@ $(function() {
 
             $('#upload-list').append(li);
             data.context = li;
+            data.isFinalChunkResponse = true;
+            data.headers = data.headers || {};
+            data.headers['X-Chunk-Upload-Id'] = createUploadId();
 
             data.process(function() {
                 return $this.fileupload('process', data);
@@ -90,6 +102,13 @@ $(function() {
         done: function(e, data) {
             var itemElement = $(data.context);
             var response = $.parseJSON(data.result);
+            var isIntermediateChunk = response.chunked_upload && !response.complete;
+
+            data.isFinalChunkResponse = !isIntermediateChunk || !response.success;
+
+            if (isIntermediateChunk && response.success) {
+                return;
+            }
 
             if (response.success) {
                 itemElement.addClass('upload-success');
@@ -103,11 +122,17 @@ $(function() {
 
         fail: function(e, data) {
             var itemElement = $(data.context);
+            data.isFinalChunkResponse = true;
             itemElement.addClass('upload-failure');
         },
 
         always: function(e, data) {
             var itemElement = $(data.context);
+
+            if (!data.isFinalChunkResponse) {
+                return;
+            }
+
             itemElement.removeClass('upload-uploading').addClass('upload-complete');
         }
     });

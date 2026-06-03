@@ -1,4 +1,5 @@
 import json
+import uuid
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -591,6 +592,55 @@ class TestMultipleVideoUploader(TestCase, WagtailTestUtils):
         self.assertFalse(response_json["success"])
         self.assertIn("Not a valid video.", response_json["error_message"])
 
+    @override_settings(WAGTAILVIDEOS_UPLOAD_CHUNK_SIZE=1024 * 1024)
+    def test_add_post_chunked_upload(self):
+        source_file = create_test_video_file()
+        source_data = source_file.read()
+        chunk_id = str(uuid.uuid4())
+
+        first_chunk_size = len(source_data) // 2
+        first_chunk = source_data[:first_chunk_size]
+        second_chunk = source_data[first_chunk_size:]
+
+        first_response = self.client.post(
+            reverse("wagtailvideos:add_multiple"),
+            {
+                "files[]": SimpleUploadedFile("small.mp4", first_chunk, "video/mp4"),
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_CONTENT_RANGE="bytes 0-{}/{}".format(
+                first_chunk_size - 1, len(source_data)
+            ),
+            HTTP_X_CHUNK_UPLOAD_ID=chunk_id,
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        first_payload = json.loads(first_response.content.decode())
+        self.assertTrue(first_payload["chunked_upload"])
+        self.assertFalse(first_payload["complete"])
+        self.assertFalse(Video.objects.filter(title="small.mp4").exists())
+
+        second_response = self.client.post(
+            reverse("wagtailvideos:add_multiple"),
+            {
+                "files[]": SimpleUploadedFile("small.mp4", second_chunk, "video/mp4"),
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_CONTENT_RANGE="bytes {}-{}/{}".format(
+                first_chunk_size,
+                len(source_data) - 1,
+                len(source_data),
+            ),
+            HTTP_X_CHUNK_UPLOAD_ID=chunk_id,
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(second_response["Content-Type"], "application/json")
+
+        second_payload = json.loads(second_response.content.decode())
+        self.assertTrue(second_payload["success"])
+        self.assertIn("video_id", second_payload)
+
     def test_edit_get(self):
         """
         This tests that a GET request to the edit view returns a 405 "METHOD NOT ALLOWED" response
@@ -708,20 +758,20 @@ class TestDeleteTranscode(TestCase, WagtailTestUtils):
 
         # Create a video to edit
         self.video = Video.objects.create(
-            title="Test video",
-            file=create_test_video_file()
+            title="Test video", file=create_test_video_file()
         )
 
         # Create a transcode to delete
         self.video.transcodes.create(
-            media_format=MediaFormats.MP4,
-            file=create_test_video_file()
+            media_format=MediaFormats.MP4, file=create_test_video_file()
         )
 
     def get(self, transcode_id, params={}):
         return self.client.get(
-            reverse("wagtailvideos:delete_transcode", args=(self.video.id, transcode_id)),
-            params
+            reverse(
+                "wagtailvideos:delete_transcode", args=(self.video.id, transcode_id)
+            ),
+            params,
         )
 
     def test_delete(self):
@@ -731,7 +781,9 @@ class TestDeleteTranscode(TestCase, WagtailTestUtils):
         response = self.get(transcode.id)
 
         # Should redirect back to edit view
-        self.assertRedirects(response, reverse("wagtailvideos:edit", args=(self.video.id,)))
+        self.assertRedirects(
+            response, reverse("wagtailvideos:edit", args=(self.video.id,))
+        )
 
         # Should delete the transcode
         self.assertFalse(VideoTranscode.objects.filter(id=transcode.id).exists())
