@@ -31,6 +31,7 @@ $(function() {
 
             $('#upload-list').append(li);
             data.context = li;
+            data.isFinalChunkResponse = true;
             data.headers = data.headers || {};
             data.headers['X-Chunk-Upload-Id'] = createUploadId();
 
@@ -101,8 +102,11 @@ $(function() {
         done: function(e, data) {
             var itemElement = $(data.context);
             var response = $.parseJSON(data.result);
+            var isIntermediateChunk = response.chunked_upload && !response.complete;
 
-            if (response.chunked_upload && !response.complete) {
+            data.isFinalChunkResponse = !isIntermediateChunk || !response.success;
+
+            if (isIntermediateChunk && response.success) {
                 return;
             }
 
@@ -118,11 +122,17 @@ $(function() {
 
         fail: function(e, data) {
             var itemElement = $(data.context);
+            data.isFinalChunkResponse = true;
             itemElement.addClass('upload-failure');
         },
 
         always: function(e, data) {
             var itemElement = $(data.context);
+
+            if (!data.isFinalChunkResponse) {
+                return;
+            }
+
             itemElement.removeClass('upload-uploading').addClass('upload-complete');
         }
     });
