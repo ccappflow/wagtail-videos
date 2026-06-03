@@ -12,6 +12,8 @@ from wagtail.admin.views.generic.multiple_upload import \
     EditView as BaseEditView
 
 from wagtailvideos import get_video_model
+from wagtailvideos.chunked_uploads import (
+    get_upload_chunk_size, handle_chunked_upload)
 from wagtailvideos.forms import get_video_form
 from wagtailvideos.permissions import permission_policy
 
@@ -24,17 +26,15 @@ def get_video_edit_form(video_model):
     class VideoEditForm(VideoForm):
         class Meta(VideoForm.Meta):
             model = video_model
-            exclude = (
-                'file',
-            )
+            exclude = ("file",)
 
     return VideoEditForm
 
 
 class AddView(BaseAddView):
     permission_policy = permission_policy
-    template_name = 'wagtailvideos/multiple/add.html'
-    edit_form_template_name = 'wagtailvideos/multiple/edit_form.html'
+    template_name = "wagtailvideos/multiple/add.html"
+    edit_form_template_name = "wagtailvideos/multiple/edit_form.html"
 
     edit_object_url_name = "wagtailvideos:edit_multiple"
     delete_object_url_name = "wagtailvideos:delete_multiple"
@@ -69,6 +69,7 @@ class AddView(BaseAddView):
         context.update(
             {
                 "max_filesize": self.form.fields["file"].max_upload_size,
+                "chunk_size": get_upload_chunk_size(),
                 "max_title_length": self.form.fields["title"].max_length,
                 "error_max_file_size": self.form.fields["file"].error_messages[
                     "file_too_large_unknown_size"
@@ -80,6 +81,17 @@ class AddView(BaseAddView):
         )
 
         return context
+
+    def post(self, request, *args, **kwargs):
+        chunk_result = handle_chunked_upload(request, field_name="files[]")
+        if chunk_result.response:
+            return chunk_result.response
+
+        try:
+            return super().post(request, *args, **kwargs)
+        finally:
+            if chunk_result.cleanup:
+                chunk_result.cleanup()
 
 
 class EditView(BaseEditView):

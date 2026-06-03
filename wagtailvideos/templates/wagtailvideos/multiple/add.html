@@ -86,6 +86,7 @@
     <script>
         window.fileupload_opts = {
             simple_upload_url: "{% url 'wagtailvideos:add' %}",
+            chunk_size: {% if chunk_size %}{{ chunk_size }}{% else %}null{% endif %},
             max_file_size: {{ max_filesize|stringformat:"s"|default:"null" }}, //numeric format
             errormessages: {
                 max_file_size: "{{ error_max_file_size }}",

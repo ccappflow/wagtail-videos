@@ -133,6 +133,23 @@ Maximum file size that can be uploaded is defaulted to 1GB. This can be override
     # settings.py
     WAGTAILVIDEOS_MAX_UPLOAD_SIZE = 1024*1024*1024
 
+Chunked uploads (optional):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Chunked uploads are disabled by default. If enabled, uploads are split into
+multiple requests and reassembled server-side. This is useful when running
+behind proxies/CDNs that enforce per-request body limits (for example,
+Cloudflare free plan limits).
+
+Set ``WAGTAILVIDEOS_UPLOAD_CHUNK_SIZE`` (in bytes) to enable chunking for the
+multiple-upload admin screen.
+
+.. code:: django
+
+    # settings.py
+    # 95MB chunks to stay below 100MB per-request limits
+    WAGTAILVIDEOS_UPLOAD_CHUNK_SIZE = 95 * 1024 * 1024
+
 Modify Thumbnail extension:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -184,6 +201,8 @@ Same as Wagtail Images, a custom model can be used to replace the built in Video
 
     class CustomVideoTrack(AbstractVideoTrack):
         listing = ParentalKey(CustomTrackListing, related_name='tracks', on_delete=models.CASCADE)
+
+
 
 
 
