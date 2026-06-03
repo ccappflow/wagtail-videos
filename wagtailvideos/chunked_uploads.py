@@ -41,6 +41,19 @@ def handle_chunked_upload(request, field_name):
     if not content_range or not chunk_id:
         return ChunkedUploadResult()
 
+    # Prevent path traversal / absolute-path writes and unsafe cleanup()
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", chunk_id):
+        return ChunkedUploadResult(
+            response=JsonResponse(
+                {
+                    "chunked_upload": True,
+                    "complete": False,
+                    "success": False,
+                    "error_message": "Invalid chunk upload id.",
+                },
+                status=400,
+            )
+        )
     match = CONTENT_RANGE_RE.match(content_range)
     if not match:
         return ChunkedUploadResult(
@@ -73,6 +86,49 @@ def handle_chunked_upload(request, field_name):
     end = int(match.group("end"))
     total = int(match.group("total"))
 
+    if start < 0 or end < start or total <= 0 or end >= total:
+        return ChunkedUploadResult(
+            response=JsonResponse(
+                {
+                    "chunked_upload": True,
+                    "complete": False,
+                    "success": False,
+                    "error_message": "Invalid Content-Range values.",
+                },
+                status=400,
+            )
+        )
+
+    # Enforce the same upper bound as the normal upload field to avoid disk DoS
+    max_upload_size = getattr(settings, "WAGTAILVIDEOS_MAX_UPLOAD_SIZE", 1024 * 1024 * 1024)
+    if max_upload_size is not None and total > max_upload_size:
+        return ChunkedUploadResult(
+            response=JsonResponse(
+                {
+                    "chunked_upload": True,
+                    "complete": False,
+                    "success": False,
+                    "error_message": "Uploaded file exceeds the maximum allowed size.",
+                },
+                status=413,
+            )
+        )
+
+    # Validate that the uploaded bytes match the declared Content-Range
+    expected_len = end - start + 1
+    if getattr(upload, "size", None) is not None and upload.size != expected_len:
+        return ChunkedUploadResult(
+            response=JsonResponse(
+                {
+                    "chunked_upload": True,
+                    "complete": False,
+                    "success": False,
+                    "error_message": "Uploaded chunk size does not match Content-Range.",
+                },
+                status=400,
+            )
+        )
+
     chunk_dir = os.path.join(_get_chunk_root_dir(), chunk_id)
     os.makedirs(chunk_dir, exist_ok=True)
     assembled_path = os.path.join(chunk_dir, "assembled.upload")
@@ -82,7 +138,6 @@ def handle_chunked_upload(request, field_name):
         assembled_file.seek(start)
         for chunk in upload.chunks():
             assembled_file.write(chunk)
-
     is_complete = end + 1 >= total
     if not is_complete:
         return ChunkedUploadResult(
