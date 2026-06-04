@@ -38,23 +38,9 @@ def handle_chunked_upload(request, field_name):
     content_range = request.headers.get("Content-Range")
     chunk_id = _get_chunk_identifier(request)
 
-    # No chunking headers => treat as a normal (non-chunked) upload
-    if not content_range and not chunk_id:
+    # no content range => file is smaller than chunk size, treat as normal upload
+    if not content_range:
         return ChunkedUploadResult()
-
-    # One header without the other => reject to avoid treating partial chunks as full uploads
-    if bool(content_range) != bool(chunk_id):
-        return ChunkedUploadResult(
-            response=JsonResponse(
-                {
-                    "chunked_upload": True,
-                    "complete": False,
-                    "success": False,
-                    "error_message": "Chunked upload headers are incomplete.",
-                },
-                status=400,
-            )
-        )
 
     # Prevent path traversal / absolute-path writes and unsafe cleanup()
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", chunk_id):
@@ -150,7 +136,9 @@ def handle_chunked_upload(request, field_name):
     os.makedirs(chunk_dir, exist_ok=True)
     assembled_path = os.path.join(chunk_dir, "assembled.upload")
 
-    current_size = os.path.getsize(assembled_path) if os.path.exists(assembled_path) else 0
+    current_size = (
+        os.path.getsize(assembled_path) if os.path.exists(assembled_path) else 0
+    )
     if start == 0 and current_size:
         # Client restarted upload; truncate any existing partial file.
         open(assembled_path, "wb").close()
