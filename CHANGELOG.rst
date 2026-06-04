@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+7.4.0
+-----
+
+- Added chunked upload support for large files
+
+
 7.2.0
 -----
 

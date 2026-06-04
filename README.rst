@@ -1,10 +1,6 @@
 wagtailvideos
 =============
 
-.. image:: https://gitlab.com/neonjungle/wagtailvideos/badges/master/pipeline.svg
-    :target: https://gitlab.com/neonjungle/wagtailvideos/pipelines?ref=master
-
-
 Based on wagtailimages. The aim was to have feature parity with images
 but for html5 videos. Includes the ability to transcode videos to a
 html5 compliant codec using ffmpeg and also the ability to add and manage VTT text
