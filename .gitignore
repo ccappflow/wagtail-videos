@@ -10,3 +10,4 @@ tests.sqlite3
 build/
 .prettierignore
 .venv
+.idea
