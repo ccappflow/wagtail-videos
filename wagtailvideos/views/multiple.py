@@ -1,5 +1,6 @@
 import os
 
+from django.http import HttpResponseBadRequest, JsonResponse
 from wagtail.admin.auth import PermissionPolicyChecker
 from wagtail.admin.views.generic.multiple_upload import AddView as BaseAddView
 from wagtail.admin.views.generic.multiple_upload import \
@@ -83,6 +84,13 @@ class AddView(BaseAddView):
         return context
 
     def post(self, request, *args, **kwargs):
+        # Register a video that already lives in storage by its path, instead
+        # of uploading the file through the browser (e.g. uploaded to S3 out
+        # of band). The "location" field is sent by the separate form on the
+        # add page.
+        if "location" in request.POST:
+            return self.add_from_storage_location(request.POST["location"])
+
         chunk_result = handle_chunked_upload(request, field_name="files[]")
         if chunk_result.response:
             return chunk_result.response
@@ -92,6 +100,28 @@ class AddView(BaseAddView):
         finally:
             if chunk_result.cleanup:
                 chunk_result.cleanup()
+
+    def add_from_storage_location(self, location):
+        location = (location or "").strip()
+        if not location:
+            return HttpResponseBadRequest("Must provide a storage location")
+
+        if self.model.objects.filter(file=location).exists():
+            return JsonResponse(
+                {"success": False, "error_message": "Video already exists."})
+
+        video = self.model(
+            title=os.path.basename(location),
+            uploaded_by_user=self.request.user,
+        )
+        video.file = location
+        try:
+            video.save()
+        except Exception as e:
+            return JsonResponse({"success": False, "error_message": str(e)})
+
+        self.object = video
+        return JsonResponse(self.get_edit_object_response_data())
 
 
 class EditView(BaseEditView):

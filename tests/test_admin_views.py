@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.defaultfilters import filesizeformat
 from django.test import TestCase, override_settings
@@ -585,6 +586,39 @@ class TestMultipleVideoUploader(TestCase, WagtailTestUtils):
         self.assertIn("success", response_json)
         self.assertEqual(response_json["video_id"], response.context["video"].id)
         self.assertTrue(response_json["success"])
+
+    def test_add_post_storage_location(self):
+        """
+        Posting a `location` registers a file that already exists in storage
+        without uploading it, returning the same JSON edit form as an upload.
+        """
+        location = default_storage.save(
+            "from_storage.mp4", create_test_video_file())
+        try:
+            response = self.client.post(
+                reverse("wagtailvideos:add_multiple"),
+                {"location": location},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "application/json")
+            response_json = json.loads(response.content.decode())
+            self.assertTrue(response_json["success"])
+
+            video = Video.objects.get(pk=response_json["video_id"])
+            self.assertEqual(video.file.name, location)
+            self.assertEqual(video.title, "from_storage.mp4")
+
+            # Re-posting the same location is rejected as a duplicate.
+            dup = self.client.post(
+                reverse("wagtailvideos:add_multiple"),
+                {"location": location},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+            self.assertFalse(json.loads(dup.content.decode())["success"])
+        finally:
+            default_storage.delete(location)
 
     def test_add_post_badfile(self):
         """

@@ -38,6 +38,15 @@
             </form>
         </div>
 
+        <div class="storage-locations">
+            <form action="{% url 'wagtailvideos:add_multiple' %}" method="POST">
+                {% csrf_token %}
+                <p>{% trans "Alternatively, upload videos to your storage directly and provide their locations here, one per line." %}</p>
+                <textarea id="locations" name="locations"></textarea>
+                <button type="button" class="button bicolor button--icon" id="add_storage">{% icon name="plus" wrapped=1 %}{% trans "Add videos from storage" %}</button>
+            </form>
+        </div>
+
         <div id="overall-progress" class="progress progress-secondary">
             <div class="bar" style="width: 0%;">0%</div>
         </div>
