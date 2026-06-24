@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -52,6 +53,17 @@ class IndexView(generic.IndexView):
         kwargs = super().get_filterset_kwargs()
         kwargs["is_searching"] = self.is_searching
         return kwargs
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # ?error -> only videos that failed processing, either the video
+        # itself or any of its transcodes.
+        if "error" in self.request.GET:
+            queryset = queryset.filter(
+                ~Q(error_message="")
+                | (Q(transcodes__isnull=False) & ~Q(transcodes__error_message=""))
+            ).distinct()
+        return queryset
 
     def get_paginate_by(self, queryset):
         return 32  # 4 x 8

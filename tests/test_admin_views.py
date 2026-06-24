@@ -40,6 +40,25 @@ class TestVideoIndexView(WagtailTestUtils, TestCase):
             response = self.get({"p": page})
             self.assertEqual(response.status_code, 200)
 
+    def test_error_filter(self):
+        ok_video = Video.objects.create(
+            title="Healthy", file=create_test_video_file())
+        video_error = Video.objects.create(
+            title="Broken video", file=create_test_video_file(),
+            error_message="ffmpeg blew up")
+        transcode_error = Video.objects.create(
+            title="Broken transcode", file=create_test_video_file())
+        VideoTranscode.objects.create(
+            video=transcode_error, media_format=MediaFormats.WEBM,
+            error_message="transcode failed")
+
+        response = self.get({"error": ""})
+        self.assertEqual(response.status_code, 200)
+        videos = set(response.context["videos"])
+        self.assertIn(video_error, videos)
+        self.assertIn(transcode_error, videos)
+        self.assertNotIn(ok_video, videos)
+
 
 class TestVideoAddView(TestCase, WagtailTestUtils):
     def setUp(self):
