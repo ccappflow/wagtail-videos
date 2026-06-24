@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+7.3.1+ext
+---------
+
+ccappflow fork — custom business logic ported from the djangoflow fork onto
+the upstream 7.3.1 base:
+
+- Added ``error_message`` field to videos and an ``?error`` admin index filter
+  for surfacing videos/transcodes that failed processing
+- Optional async post-processing of large videos via Celery, controlled by
+  ``WAGTAILVIDEOS_ASYNC_POSTPROCESS_SIZE`` (install ``wagtailvideos[celery]``)
+- "Add videos from storage" by path in the multiple upload view, for files
+  pushed to storage out of band
+- Restored ``from wagtailvideos import ffmpeg`` as a backward-compatibility
+  shim re-exporting the helpers now in ``wagtailvideos.transcoders.ffmpeg``
+
+
 7.4.0
 -----
 
