@@ -21,6 +21,11 @@ setup(
         "Django>=4.2",
         "bcp47==0.0.4",
     ],
+    extras_require={
+        # Required for WAGTAILVIDEOS_ASYNC_POSTPROCESS_SIZE (async thumbnail /
+        # metadata processing via a background task).
+        "celery": ["celery>=5.0"],
+    },
     zip_safe=False,
     license="BSD License",
     packages=find_packages(),

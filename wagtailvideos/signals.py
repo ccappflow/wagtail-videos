@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
 
+from django.conf import settings
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
@@ -40,18 +41,40 @@ def post_delete_file_cleanup(instance, **kwargs):
 
 
 # Fields that need the actual video file to create using the transcoding backend.
-def video_post_save(instance, **kwargs):
+def video_post_process(instance):
     backend = get_transcoder_backend()
     if not backend.installed():
-        return
-    if hasattr(instance, '_from_signal'):
-        # Sender was us, don't run post save
         return
     backend.update_video_metadata(instance)
     instance.file_size = instance.file.size
     instance._from_signal = True
     instance.save()
     del instance._from_signal
+
+
+def video_post_save(instance, **kwargs):
+    if hasattr(instance, '_from_signal'):
+        # Sender was us, don't run post save
+        return
+
+    # Large files can take a long time to probe/thumbnail. When
+    # WAGTAILVIDEOS_ASYNC_POSTPROCESS_SIZE is set, defer that work to a Celery
+    # task for files above the threshold (requires the optional `celery`
+    # extra). Otherwise process synchronously, as before.
+    async_postprocess_size = getattr(
+        settings, 'WAGTAILVIDEOS_ASYNC_POSTPROCESS_SIZE', None)
+    if (async_postprocess_size and instance.file
+            and instance.file.size > async_postprocess_size):
+        video_pk = instance.pk
+
+        def enqueue():
+            from wagtailvideos.tasks import video_post_process_task
+            video_post_process_task.delay(video_pk)
+
+        # Wait for the row to be committed so the worker can load it.
+        transaction.on_commit(enqueue)
+    else:
+        video_post_process(instance)
 
 
 def register_signal_handlers():
