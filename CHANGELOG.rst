@@ -1,8 +1,14 @@
 CHANGELOG
 =========
 
-7.3.1.1 (tag: 7.3.1+ext)
-------------------------
+7.3.1.2
+-------
+
+- Stop packaging the ``tests`` directory (``find_packages`` excludes it) so
+  it no longer pollutes the consumer's site-packages
+
+7.3.1.1
+-------
 
 ccappflow fork — custom business logic ported from the djangoflow fork onto
 the upstream 7.3.1 base:
