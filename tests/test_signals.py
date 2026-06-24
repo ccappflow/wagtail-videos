@@ -1,9 +1,19 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 
 from tests.utils import create_test_video_file
 from wagtailvideos.models import Video
+
+
+class FFmpegCompatShimTests(SimpleTestCase):
+    def test_legacy_import_path_still_works(self):
+        # `from wagtailvideos import ffmpeg` is kept as a compat shim for code
+        # written against pre-7.x versions.
+        from wagtailvideos import ffmpeg
+        self.assertTrue(callable(ffmpeg.get_thumbnail))
+        self.assertTrue(callable(ffmpeg.installed))
+        self.assertTrue(callable(ffmpeg.get_stats))
 
 
 class AsyncPostProcessTests(TestCase):
